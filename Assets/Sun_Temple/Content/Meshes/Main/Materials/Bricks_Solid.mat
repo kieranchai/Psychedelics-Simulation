@@ -8,18 +8,18 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Bricks_Solid
-  m_Shader: {fileID: 4800000, guid: da2c2ea6d42ed1f46bb48297767250f0, type: 3}
+  m_Shader: {fileID: 4800000, guid: a7edbc2502f12054d9a264518a8f52e2, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - _DETAIL_MULX2
   - _METALLICGLOSSMAP
   - _NORMALMAP
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 1
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -111,6 +111,7 @@ Material:
     - _DetailNormalStrength: 0.5
     - _DetailTiling: 15
     - _DstBlend: 0
+    - _EnableColorPulsing: 0
     - _GlossMapScale: 0.759
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -119,18 +120,23 @@ Material:
     - _OcclusionStrength: 0
     - _Parallax: 0.005
     - _Power: 20
+    - _PulseSpeed: 1
     - _Roughness: 1
+    - _ScrollSpeed: 0
     - _Shift: 0.024
     - _Smooth: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _SwirlStrength: 0
     - _UVSec: 0
     - _ZWrite: 1
     - _layer1Rough: 0.7
     - _layer1Smooth: 0.316
     - _layer1Tiling: 1
     m_Colors:
-    - _Color: {r: 0.30110395, g: 1, b: 0.278, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 0}
+    - _DarkSaturation: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _LightSaturation: {r: 1.5, g: 1.5, b: 1.5, a: 1}
   m_BuildTextureStacks: []
