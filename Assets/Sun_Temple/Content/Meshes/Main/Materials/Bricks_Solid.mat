@@ -112,9 +112,11 @@ Material:
     - _DetailTiling: 15
     - _DstBlend: 0
     - _EnableColorPulsing: 0
+    - _ExtrusionAmount: 0.27
     - _GlossMapScale: 0.759
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _IsEnabled: 0
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 0
@@ -130,6 +132,7 @@ Material:
     - _SrcBlend: 1
     - _SwirlStrength: 0
     - _UVSec: 0
+    - _VoronoiScale: 1
     - _ZWrite: 1
     - _layer1Rough: 0.7
     - _layer1Smooth: 0.316

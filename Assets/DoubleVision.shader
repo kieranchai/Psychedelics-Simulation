@@ -28,7 +28,7 @@ Shader "AdjustableBlur"
                 {
                     // Calculate UV coordinates
                     float2 uv = vertex.xy / _ScreenParams.xy;
-                    uv.y = 1.0 - uv.y;
+                    //uv.y = 1.0 - uv.y;
 
                     // Apply distortion effect
                     float timeFactor = _Time.g * _DistortionFrequency; // Adjust frequency of effect

@@ -4,12 +4,11 @@ using System.Collections;
 public class DoubleVisionEffect : MonoBehaviour
 {
     public Material blendMaterial;
-    public float lerpDuration = 2f; // Duration of the lerping effect
-    private bool isEffectActive = false; // Flag to track if the effect is currently active
+    public float lerpDuration = 2f;
+    private bool isEffectActive = false;
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        // Apply the blend material to the full screen
         Graphics.Blit(source, destination, blendMaterial);
     }
 
