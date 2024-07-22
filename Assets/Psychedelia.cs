@@ -170,7 +170,7 @@ public class Psychedelia : MonoBehaviour
                 depthOfField.focusDistance.value = Mathf.Lerp(10.0f, 0.0f, t);
                 colorGrading.saturation.value = Mathf.Lerp(30.0f, -100, t);
                 colorGrading.colorFilter.value = Color.Lerp(Color.white, Color.black, t);
-                _audioMixer.SetFloat("Heartbeat", 80f);
+                _audioMixer.SetFloat("Heartbeat", 0.8f);
                 if (!isBlinking)
                 {
                     doubleVisionEffect.ToggleDoubleVisionEffect(true);

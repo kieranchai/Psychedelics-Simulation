@@ -57,6 +57,7 @@ public class EyesScript : MonoBehaviour
 
     public void RestartScene()
     {
+        AudioManager.AudioM.heartbeatAS.Stop();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
