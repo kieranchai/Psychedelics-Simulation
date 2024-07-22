@@ -7,7 +7,7 @@ public class Kaleidoscope : MonoBehaviour
     public Psychedelia psycheScript;
 
     public Material postProcessMaterial;
-    public float lerpDuration = 15f;
+    private float lerpDuration = 8f;
     private bool isEffectActive = false;
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -31,6 +31,8 @@ public class Kaleidoscope : MonoBehaviour
         }
         else if (!activate && isEffectActive)
         {
+            ++psycheScript.kaleidoscopeCount;
+
             // Turn off the effect
             StartCoroutine(LerpKaleidoscopeStrength(12f, 1f, 1f, 0f, -100f, 0f));
             isEffectActive = false;
@@ -42,7 +44,7 @@ public class Kaleidoscope : MonoBehaviour
         float elapsedTime = 0f;
         while (elapsedTime < lerpDuration)
         {
-            float currentValue = Mathf.Lerp(startValue, endValue, elapsedTime / lerpDuration);
+            float currentValue = Mathf.Lerp(startValue, endValue, elapsedTime / lerpDuration * 1.5f);
             postProcessMaterial.SetFloat("_NumSegments", currentValue);
 
             float currentValue2 = Mathf.Lerp(startValue2, endValue2, elapsedTime / lerpDuration);

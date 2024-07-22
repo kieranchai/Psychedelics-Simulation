@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class EyesScript : MonoBehaviour
 {
@@ -51,5 +52,11 @@ public class EyesScript : MonoBehaviour
         }
         psycheScript.depthOfField.focusDistance.value = 10f;
         psycheScript.autoExposure.minLuminance.value = 0f;
+        psycheScript.vignette.intensity.value = 0.5f;
+    }
+
+    public void RestartScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

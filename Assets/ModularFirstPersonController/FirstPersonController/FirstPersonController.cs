@@ -18,6 +18,8 @@ public class FirstPersonController : MonoBehaviour
 {
     private Rigidbody rb;
 
+    private MenuController menuController;
+
     #region Camera Movement Variables
 
     public Camera playerCamera;
@@ -132,7 +134,7 @@ public class FirstPersonController : MonoBehaviour
     // Internal Variables
     private Vector3 jointOriginalPos;
     private float timer = 0;
-
+    private Footsteps footstepsController;
     #endregion
 
     private void Awake()
@@ -140,6 +142,8 @@ public class FirstPersonController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
 
         crosshairObject = GetComponentInChildren<Image>();
+        menuController = GetComponent<MenuController>();
+        footstepsController = transform.Find("SFX").transform.Find("Footsteps").GetComponent<Footsteps>();
 
         // Set internal variables
         playerCamera.fieldOfView = fov;
@@ -206,6 +210,17 @@ public class FirstPersonController : MonoBehaviour
 
     private void Update()
     {
+        if (menuController.pauseIsActive) return;
+        if (GetComponent<Psychedelia>().kaleidoscopeCount >= 1)
+        {
+            playerCanMove = false;
+            cameraCanMove = false;
+
+            pitch -= mouseSensitivity * -0.05f;
+            pitch = Mathf.Clamp(pitch, -90f, 90f);
+            playerCamera.transform.localEulerAngles = new Vector3(pitch, 0, 0);
+        }
+
         #region Camera
 
         // Control camera movement
@@ -530,6 +545,16 @@ public class FirstPersonController : MonoBehaviour
             {
                 timer += Time.deltaTime * bobSpeed;
             }
+
+            // Calculate bobbing motion
+            float bobSin = Mathf.Sin(timer);
+
+            // Check for downward bob (when head is at lowest point)
+            if (bobSin < -0.9f && !footstepsController.IsPlayingFootstep())
+            {
+                footstepsController.PlayFootstep();
+            }
+
             // Applies HeadBob movement
             joint.localPosition = new Vector3(jointOriginalPos.x + Mathf.Sin(timer) * bobAmount.x, jointOriginalPos.y + Mathf.Sin(timer) * bobAmount.y, jointOriginalPos.z + Mathf.Sin(timer) * bobAmount.z);
         }
@@ -537,6 +562,7 @@ public class FirstPersonController : MonoBehaviour
         {
             // Resets when play stops moving
             timer = 0;
+            footstepsController.StopFootstep();
             joint.localPosition = new Vector3(Mathf.Lerp(joint.localPosition.x, jointOriginalPos.x, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.y, jointOriginalPos.y, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.z, jointOriginalPos.z, Time.deltaTime * bobSpeed));
         }
     }

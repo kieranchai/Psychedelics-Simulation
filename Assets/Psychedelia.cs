@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.PostProcessing;
 
 public class Psychedelia : MonoBehaviour
@@ -9,16 +11,21 @@ public class Psychedelia : MonoBehaviour
     [SerializeField]
     private FirstPersonController firstPersonController;
 
+    [SerializeField]
+    private AudioMixer _audioMixer;
+
     private float normalMoveSpeed;
     private float trippedMoveSpeed;
     private bool isTripping = false;
+    private bool isKaleidoscopeEnding = false;
     private float normalMouseSens;
     private float trippedMouseSens;
 
     [SerializeField]
     private PostProcessVolume postProcessVol;
     private ColorGrading colorGrading;
-    private ChromaticAberration chromaticAberration;
+    [HideInInspector]
+    public ChromaticAberration chromaticAberration;
     private MotionBlur motionBlur;
     [HideInInspector]
     public DepthOfField depthOfField;
@@ -26,6 +33,8 @@ public class Psychedelia : MonoBehaviour
     public AutoExposure autoExposure;
     [HideInInspector]
     public LensDistortion lensDistortion;
+    [HideInInspector]
+    public Vignette vignette;
 
     public float fadeDuration = 0.1f;
     private float timer = 0.0f;
@@ -33,11 +42,10 @@ public class Psychedelia : MonoBehaviour
     private bool isFadingOut = false;
     private bool isBlinking = false;
 
-    public float newScrollSpeed = 0.005f;
+    public float newScrollSpeed = 0.003f;
     private Camera mainCamera;
 
-    [SerializeField]
-    private DoubleVisionEffect doubleVisionEffect;
+    public DoubleVisionEffect doubleVisionEffect;
     private float doubleVisionInterval = 0f;
     private float doubleVisionTimer = 0f;
 
@@ -77,6 +85,15 @@ public class Psychedelia : MonoBehaviour
     [SerializeField]
     private Kaleidoscope kaleidoscopeEffect;
 
+    public bool hasCollided = false;
+    public bool isHexed = false;
+    private float hexTimer = 0f;
+    private float dofFocusDistance = 10.0f;
+    private float vignetteIntensity = 0.5f;
+    private bool isIncreasing = true;
+    private bool hasPlayedBuzzing = false;
+    public int kaleidoscopeCount = 0;
+
     private void Start()
     {
         normalMoveSpeed = firstPersonController.walkSpeed;
@@ -88,6 +105,7 @@ public class Psychedelia : MonoBehaviour
         postProcessVol.profile.TryGetSettings(out depthOfField);
         postProcessVol.profile.TryGetSettings(out autoExposure);
         postProcessVol.profile.TryGetSettings(out lensDistortion);
+        postProcessVol.profile.TryGetSettings(out vignette);
 
         mainCamera = Camera.main;
 
@@ -96,8 +114,94 @@ public class Psychedelia : MonoBehaviour
 
     void Update()
     {
+        if (!hasCollided) return;
+
+        if (hasCollided && !isHexed)
+        {
+            hexTimer += Time.deltaTime;
+
+            if (hexTimer >= 1.0f)
+            {
+                // Update the pulsing effect for chromatic aberration
+                float pulse = Mathf.Sin(Time.time * 30f);
+                float targetChromatic = Mathf.Clamp01(pulse * 2.0f); // Adjust multiplier to control intensity
+                chromaticAberration.intensity.value = Mathf.Lerp(chromaticAberration.intensity.value, targetChromatic, Time.deltaTime * 0.5f);
+
+                motionBlur.shutterAngle.value = 360f;
+
+                float pulse2 = Mathf.Sin(Time.time);
+                float targetHueShift = Mathf.Lerp(-60f, 60f, (pulse2 + 1f) / 2f);
+                colorGrading.hueShift.value = Mathf.Lerp(colorGrading.hueShift.value, targetHueShift, Time.deltaTime);
+
+                // Shift depth of field focus distance over time
+                dofFocusDistance = Mathf.Lerp(dofFocusDistance, UnityEngine.Random.Range(0.0f, 2f), Time.deltaTime * 1f);
+                depthOfField.focusDistance.value = dofFocusDistance;
+
+                if (isIncreasing)
+                {
+                    vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * 0.2f, 0.5f, 0.60f);
+                    if (vignetteIntensity >= 0.60f)
+                    {
+                        isIncreasing = false; // Start decreasing vignette intensity
+                        AudioManager.AudioM.PlayHeartbeat();
+                    }
+                }
+                else
+                {
+                    vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * 0.2f, 0.5f, 0.60f);
+                    if (vignetteIntensity <= 0.5f)
+                        isIncreasing = true; // Start increasing vignette intensity again
+                }
+                vignette.intensity.value = vignetteIntensity;
+            }
+            return;
+        }
+
+        if (isFadingOut)
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / fadeDuration);
+            if (kaleidoscopeCount >= 1)
+            {
+                motionBlur.shutterAngle.value = 360f;
+                vignette.intensity.value = Mathf.Lerp(0.5f, 0.7f, t);
+                depthOfField.focusDistance.value = Mathf.Lerp(10.0f, 0.0f, t);
+                colorGrading.saturation.value = Mathf.Lerp(30.0f, -100, t);
+                colorGrading.colorFilter.value = Color.Lerp(Color.white, Color.black, t);
+                if (!isBlinking)
+                {
+                    doubleVisionEffect.ToggleDoubleVisionEffect(true);
+                    isBlinking = true;
+                    eyesAnim.Play("Blackout");
+                }
+                return;
+            }
+
+            if (!isBlinking)
+            {
+                isBlinking = true;
+                eyesAnim.Play("Blink");
+            }
+            chromaticAberration.intensity.value = Mathf.Lerp(chromaticAberrationIntensity, 0.0f, t);
+            motionBlur.shutterAngle.value = Mathf.Lerp(motionBlurIntensity, 120f, t);
+            firstPersonController.walkSpeed = Mathf.Lerp(trippedMoveSpeed, normalMoveSpeed, t);
+            firstPersonController.bobSpeed = 10;
+            firstPersonController.mouseSensitivity = Mathf.Lerp(trippedMouseSens, normalMouseSens, t);
+            colorGrading.hueShift.value = Mathf.Lerp(currentColorGrading, 0f, t);
+            lensDistortion.intensity.value = Mathf.Lerp(currentLensDistortion, 0f, t);
+
+            if (t >= 1.0f)
+            {
+                firstPersonController.subtleSwayEnabled = false;
+                isFadingOut = false;
+                isBlinking = false;
+                isTripping = false;
+                StopTripping();
+            }
+        }
+
         tripTime += Time.deltaTime;
-        if (tripTime >= 0.0 && tripTime < 20.0)
+        if (tripTime >= 0.0 && tripTime < 20.0f)
         {
             currentTripLevel = tripLevel.Low;
             currentChromaticAberrationIntensity = 0.0f;
@@ -110,10 +214,10 @@ public class Psychedelia : MonoBehaviour
             trippedMoveSpeed = normalMoveSpeed * 3 / 4;
             trippedMouseSens = normalMouseSens * 3 / 4;
             firstPersonController.bobSpeed = 10 * 3 / 4;
-            maxColorGrading = 12f;
+            maxColorGrading = 15f;
             maxLensDistortion = 12;
         }
-        else if (tripTime >= 20.0 && tripTime < 35.0)
+        else if (tripTime >= 20.0f && tripTime < 40.0)
         {
             currentTripLevel = tripLevel.Medium;
             currentChromaticAberrationIntensity = chromaticAberrationIntensity;
@@ -125,11 +229,11 @@ public class Psychedelia : MonoBehaviour
             motionBlurIntensity = 280f;
             trippedMoveSpeed = normalMoveSpeed * 2 / 3;
             trippedMouseSens = normalMouseSens * 2 / 3;
-            firstPersonController.bobSpeed = 10 * 2/3;
-            maxColorGrading = 20f;
+            firstPersonController.bobSpeed = 10 * 2 / 3;
+            maxColorGrading = 25f;
             maxLensDistortion = 50f;
         }
-        else if (tripTime >= 35.0 && tripTime < 60)
+        else if (tripTime >= 40.0 && tripTime < 70.0f)
         {
             currentTripLevel = tripLevel.High;
             currentChromaticAberrationIntensity = chromaticAberrationIntensity;
@@ -142,22 +246,65 @@ public class Psychedelia : MonoBehaviour
             trippedMoveSpeed = normalMoveSpeed * 1 / 3;
             trippedMouseSens = normalMouseSens * 1 / 3;
             firstPersonController.bobSpeed = 10 * 1 / 3;
-            maxColorGrading = 40f;
+            maxColorGrading = 50f;
             maxLensDistortion = 70f;
+
+            if (tripTime >= 60.0f)
+            {
+                if (isIncreasing)
+                {
+                    vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * 0.2f, 0.5f, 0.60f);
+                    if (vignetteIntensity >= 0.60f)
+                    {
+                        isIncreasing = false; // Start decreasing vignette intensity
+                        AudioManager.AudioM.PlayHeartbeat();
+                    }
+                }
+                else
+                {
+                    vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * 0.2f, 0.5f, 0.60f);
+                    if (vignetteIntensity <= 0.5f)
+                        isIncreasing = true; // Start increasing vignette intensity again
+                }
+                vignette.intensity.value = vignetteIntensity;
+            }
         }
-        else if (tripTime >= 60.0)
+        else if (tripTime >= 70.0f)
         {
             currentTripLevel = tripLevel.Highest;
 
             // effects are better (reduced), but now triggers kaleidoscopic effects
-            maxColorGrading = 20f;
+            maxColorGrading = 30f;
             maxLensDistortion = 0f;
             trippedMoveSpeed = normalMoveSpeed * 2 / 3;
             trippedMouseSens = normalMouseSens * 2 / 3;
             firstPersonController.bobSpeed = 10 * 2 / 3;
+
+            if (isIncreasing)
+            {
+                vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * 0.5f, 0.5f, 0.60f);
+                if (vignetteIntensity >= 0.60f)
+                {
+                    isIncreasing = false; // Start decreasing vignette intensity
+                    AudioManager.AudioM.PlayHeartbeat();
+                }
+            }
+            else
+            {
+                vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * 0.5f, 0.5f, 0.60f);
+                if (vignetteIntensity <= 0.5f)
+                    isIncreasing = true; // Start increasing vignette intensity again
+            }
+            vignette.intensity.value = vignetteIntensity;
         }
 
-        if (tripTime >= 5.0 && !hasTripped)
+        if (tripTime >= 63.0f && !hasPlayedBuzzing)
+        {
+            hasPlayedBuzzing = true;
+            AudioManager.AudioM.PlayBuzzing();
+        }
+
+        if (tripTime >= 8.0 && !hasTripped)
         {
             hasTripped = true;
             StartFadeIn();
@@ -253,44 +400,35 @@ public class Psychedelia : MonoBehaviour
             float targetHueShift = Mathf.Lerp(-100, 100, (pulse + 1f) / 2f);
             colorGrading.hueShift.value = Mathf.Lerp(colorGrading.hueShift.value, targetHueShift, Time.deltaTime);
 
-            if (kaleidoscopeTimer >= 20f)
+            if (kaleidoscopeTimer >= 10f && !isKaleidoscopeEnding)
             {
                 kaleidoscopeTimer = 0f;
+                kaleidoscopeEffect.ToggleKaleidoscopeEffect(false);
+                isKaleidoscopeEnding = true;
+            }
+
+            if (isKaleidoscopeEnding && kaleidoscopeTimer >= 6.5f)
+            {
+                StartFadeOut();
+                isKaleidoscopeEnding = false;
                 hasKaleidoscopeStarted = false;
                 isTripping = false;
                 tripTime = 0.0f;
                 hasTripped = false;
-                kaleidoscopeEffect.ToggleKaleidoscopeEffect(false);
-                StartFadeOut();
             }
         }
 
-        if (isFadingOut)
-        {
-            timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / fadeDuration);
-            if (!isBlinking)
-            {
-                isBlinking = true;
-                eyesAnim.Play("Blink");
-            }
-            chromaticAberration.intensity.value = Mathf.Lerp(chromaticAberrationIntensity, 0.0f, t);
-            motionBlur.shutterAngle.value = Mathf.Lerp(motionBlurIntensity, 120f, t);
-            firstPersonController.walkSpeed = Mathf.Lerp(trippedMoveSpeed, normalMoveSpeed, t);
-            firstPersonController.bobSpeed = 10;
-            firstPersonController.mouseSensitivity = Mathf.Lerp(trippedMouseSens, normalMouseSens, t);
-            colorGrading.hueShift.value = Mathf.Lerp(currentColorGrading, 0f, t);
-            lensDistortion.intensity.value = Mathf.Lerp(currentLensDistortion, 0f, t);
+       
+    }
 
-            if (t >= 1.0f)
-            {
-                firstPersonController.subtleSwayEnabled = false;
-                isFadingOut = false;
-                isBlinking = false;
-                isTripping = false;
-                StopTripping();
-            }
-        }
+    public void Blink()
+    {
+        eyesAnim.Play("Blink");
+        firstPersonController.GetComponent<Psychedelia>().doubleVisionEffect.ToggleDoubleVisionEffect(false);
+        chromaticAberration.intensity.value = 0f;
+        motionBlur.shutterAngle.value = 120f;
+        depthOfField.focusDistance.value = 10f;
+        colorGrading.hueShift.value = 0f;
     }
 
     public void StartFadeIn()
@@ -299,20 +437,26 @@ public class Psychedelia : MonoBehaviour
         timer = 0.0f;
         blinkInTimer = 0.0f;
         blinkOutTimer = 0.0f;
+        AudioManager.AudioM.PlayEerieBGM();
+        _audioMixer.SetFloat("BirdsEcho", 311f);
+        _audioMixer.SetFloat("Footsteps", 14f);
     }
 
     public void StartFadeOut()
     {
+        AudioManager.AudioM.PauseEerieBGM();
         isFadingOut = true;
         timer = 0.0f;
         blinkOutTimer = 0.0f;
         blinkInTimer = 0.0f;
-        blinkOutInterval = UnityEngine.Random.Range(12f, 18f);
-        blinkInInterval = UnityEngine.Random.Range(3f, 10f);
+        blinkOutInterval = UnityEngine.Random.Range(15f, 20f);
+        blinkInInterval = UnityEngine.Random.Range(3f, 8f);
+        _audioMixer.SetFloat("BirdsEcho", 1f);
+        _audioMixer.SetFloat("Footsteps", 8f);
 
         if (currentTripLevel == tripLevel.High)
         {
-            blinkOutInterval = UnityEngine.Random.Range(25f, 40f);
+            blinkOutInterval = UnityEngine.Random.Range(30f, 40f);
             blinkInInterval = UnityEngine.Random.Range(0f, 3f);
         }
     }
