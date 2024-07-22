@@ -93,6 +93,8 @@ public class Psychedelia : MonoBehaviour
     private bool isIncreasing = true;
     private bool hasPlayedBuzzing = false;
     public int kaleidoscopeCount = 0;
+    private float heartRate = 0.2f;
+    private float secTimer = 0f;
 
     private void Start()
     {
@@ -168,6 +170,7 @@ public class Psychedelia : MonoBehaviour
                 depthOfField.focusDistance.value = Mathf.Lerp(10.0f, 0.0f, t);
                 colorGrading.saturation.value = Mathf.Lerp(30.0f, -100, t);
                 colorGrading.colorFilter.value = Color.Lerp(Color.white, Color.black, t);
+                _audioMixer.SetFloat("Heartbeat", 80f);
                 if (!isBlinking)
                 {
                     doubleVisionEffect.ToggleDoubleVisionEffect(true);
@@ -251,9 +254,18 @@ public class Psychedelia : MonoBehaviour
 
             if (tripTime >= 60.0f)
             {
+                secTimer += Time.deltaTime;
+                if (secTimer >= 1.0f)
+                {
+                    heartRate += 0.03f;
+                    secTimer = 0f;
+                }
+
+                heartRate = Mathf.Clamp(heartRate, 0.2f, 0.5f);
+
                 if (isIncreasing)
                 {
-                    vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * 0.2f, 0.5f, 0.60f);
+                    vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * heartRate, 0.5f, 0.60f);
                     if (vignetteIntensity >= 0.60f)
                     {
                         isIncreasing = false; // Start decreasing vignette intensity
@@ -262,7 +274,7 @@ public class Psychedelia : MonoBehaviour
                 }
                 else
                 {
-                    vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * 0.2f, 0.5f, 0.60f);
+                    vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * heartRate, 0.5f, 0.60f);
                     if (vignetteIntensity <= 0.5f)
                         isIncreasing = true; // Start increasing vignette intensity again
                 }
@@ -280,9 +292,16 @@ public class Psychedelia : MonoBehaviour
             trippedMouseSens = normalMouseSens * 2 / 3;
             firstPersonController.bobSpeed = 10 * 2 / 3;
 
+            secTimer += Time.deltaTime;
+            if (secTimer >= 1.0f)
+            {
+                heartRate += 0.03f;
+                secTimer = 0f;
+            }
+            heartRate = Mathf.Clamp(heartRate, 0.5f, 0.7f);
             if (isIncreasing)
             {
-                vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * 0.5f, 0.5f, 0.60f);
+                vignetteIntensity = Mathf.Clamp(vignetteIntensity + Time.deltaTime * heartRate, 0.5f, 0.60f);
                 if (vignetteIntensity >= 0.60f)
                 {
                     isIncreasing = false; // Start decreasing vignette intensity
@@ -291,7 +310,7 @@ public class Psychedelia : MonoBehaviour
             }
             else
             {
-                vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * 0.5f, 0.5f, 0.60f);
+                vignetteIntensity = Mathf.Clamp(vignetteIntensity - Time.deltaTime * heartRate, 0.5f, 0.60f);
                 if (vignetteIntensity <= 0.5f)
                     isIncreasing = true; // Start increasing vignette intensity again
             }

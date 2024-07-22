@@ -8,6 +8,7 @@ public class AudioManager : MonoBehaviour
     public static AudioManager AudioM { get; private set; }
 
     public AudioSource eerieAS;
+    public AudioSource hummingAS;
     public float fadeDuration = 2.0f;
     public float targetVolume = 1.0f;
     public float minVolume = 0.0f;
@@ -45,10 +46,15 @@ public class AudioManager : MonoBehaviour
         if (eerieAS != null && eerieAS.clip != null)
         {
             eerieAS.volume = 0.0f;
+            hummingAS.volume = 0.0f;
             StartCoroutine(FadeInVolume());
         }
 
-        if (!eerieAS.isPlaying) eerieAS.Play();
+        if (!eerieAS.isPlaying)
+        {
+            eerieAS.Play();
+            hummingAS.Play();
+        }
     }
 
     public void PauseEerieBGM()
@@ -109,9 +115,10 @@ public class AudioManager : MonoBehaviour
         {
             timer += Time.deltaTime;
             eerieAS.volume = Mathf.Lerp(startVolume, targetVolume, timer / fadeDuration);
+            hummingAS.volume = Mathf.Lerp(startVolume, targetVolume, timer / fadeDuration);
             yield return null;
         }
-
+        hummingAS.volume = targetVolume;
         eerieAS.volume = targetVolume;
     }
 
@@ -124,10 +131,13 @@ public class AudioManager : MonoBehaviour
         {
             timer += Time.deltaTime;
             eerieAS.volume = Mathf.Lerp(startVolume, minVolume, timer / fadeDuration);
+            hummingAS.volume = Mathf.Lerp(startVolume, minVolume, timer / fadeDuration);
             yield return null;
         }
 
+        hummingAS.volume = minVolume;
         eerieAS.volume = minVolume;
         eerieAS.Pause();
+        hummingAS.Pause();
     }
 }

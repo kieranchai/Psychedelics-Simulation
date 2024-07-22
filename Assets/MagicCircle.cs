@@ -9,6 +9,7 @@ public class MagicCircle : MonoBehaviour
     public GameObject glowingCircle;
     public FirstPersonController firstPersonController;
     public ParticleSystem _particleSys;
+    public ParticleSystem _contParticleSys;
 
     private float normalMoveSpeed;
     private float normalMouseSens;
@@ -36,6 +37,7 @@ public class MagicCircle : MonoBehaviour
             firstPersonController.GetComponent<Psychedelia>().chromaticAberration.intensity.value = 1.0f;
             AudioManager.AudioM.PlayMagicCircleBGM();
             _audioMixer.SetFloat("BirdsEcho", 311f);
+            _contParticleSys.Play();
         }
     }
 
@@ -47,6 +49,7 @@ public class MagicCircle : MonoBehaviour
             firstPersonController.GetComponent<Psychedelia>().Blink();
             glowingCircle.SetActive(false);
             _particleSys.Play();
+            _contParticleSys.Stop();
             firstPersonController.walkSpeed = normalMoveSpeed;
             firstPersonController.bobSpeed = 10;
             firstPersonController.mouseSensitivity = normalMouseSens;
